@@ -1,12 +1,15 @@
 package com.example.javascripttest
 
 import android.content.Context
+import android.util.Log
 import androidx.javascriptengine.JavaScriptIsolate
 import androidx.javascriptengine.JavaScriptSandbox
 import com.google.common.util.concurrent.FutureCallback
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.CompletableDeferred
+import java.io.FileNotFoundException
+import java.nio.charset.Charset
 
 class JsEngine(private val context: Context) {
     companion object {
@@ -17,8 +20,14 @@ class JsEngine(private val context: Context) {
     private lateinit var jsSandBox: JavaScriptSandbox
     private lateinit var jsIsolate: JavaScriptIsolate
     private lateinit var futureIsolate: ListenableFuture<JavaScriptIsolate>
-    val code = "function sum(a, b) { let r = a + b; return r.toString(); }; sum(3, 4)"
+//    val code = "function sum(a, b) { let r = a + b; return r.toString(); }; sum(3, 4)"
+    val code = "sum(3, 4)"
     private val setupDone = CompletableDeferred<Unit>()
+
+    private var mainFunctions: String  = getScript("jsengine/main.js")
+        ?:throw(FileNotFoundException("main not found!"))
+
+
     private fun setup(): CompletableDeferred<Unit> {
         if (!setupDone.isCompleted) {
             jsSandboxFuture = JavaScriptSandbox.createConnectedInstanceAsync(context)
@@ -28,8 +37,9 @@ class JsEngine(private val context: Context) {
                     jsIsolate = input.createIsolate()
                     setupDone.complete(Unit)
                     jsIsolate.evaluateJavaScriptAsync(code)
-//                    val resultFuture = jsIsolate.evaluateJavaScriptAsync(code)
-//                    val result = resultFuture[1,TimeUnit.NANOSECONDS] // 1ns is too fast for timeout, error should go to onFailure
+                    val resultFuture = jsIsolate.evaluateJavaScriptAsync(mainFunctions)
+                    val res = resultFuture.get()
+                    Log.d(TAG, "setup: mainFunctions load = $res")
                     jsIsolate
                 }
             ) { it.run() }
@@ -37,12 +47,20 @@ class JsEngine(private val context: Context) {
         return setupDone
     }
 
+    private fun getScript(assetName: String): String? {
+        val inputStream =
+            context.assets?.open(assetName)
+        val buffer = ByteArray(inputStream?.available() ?: return null)
+        inputStream.read(buffer)
+        return String(buffer, Charset.forName("UTF-8"))
+    }
     suspend fun run(script: String): Result<String> {
         setup().await()
         val resultFun = CompletableDeferred<Result<String>>()
         val js: ListenableFuture<String> = Futures.transformAsync(
             futureIsolate,
             { isolate ->
+                Log.d(TAG, "run: script $script")
                 val resultFuture = isolate.evaluateJavaScriptAsync(script)
                 resultFuture
             }) { it.run() }
@@ -50,6 +68,7 @@ class JsEngine(private val context: Context) {
             js,
             object : FutureCallback<String> {
                 override fun onSuccess(result: String) {
+                    Log.d(TAG, "onSuccess: $result")
                     resultFun.complete(Result.success(result))
                 }
 
