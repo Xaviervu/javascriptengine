@@ -15,7 +15,7 @@ What is implemented
 
 Current problems
 --------------
-- Call a function with arguments. 
+- Call hostlog function 
 - Create a function in JS to get a callback in Kotlin with input and output arguments
 - Debug TS 
 
