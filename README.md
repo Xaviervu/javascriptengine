@@ -13,7 +13,12 @@ What is implemented
 - The application reads javascript code and writes the code result.
 -------
 
-Copyright 2016 Google, Inc.
+Current problems
+--------------
+- Call a function with arguments. 
+- Create a function in JS to get a callback in Kotlin with input and output arguments
+- Debug TS 
+
 
 Licensed to the Apache Software Foundation (ASF) under one or more contributor
 license agreements.  See the NOTICE file distributed with this work for
