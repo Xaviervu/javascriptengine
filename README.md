@@ -11,10 +11,12 @@ What is implemented
 --------------
 
 - The application reads javascript code and writes the code result.
+- the call of an promise function gets a result on onSuccess (or on eFalure) callback
 -------
 
 Current problems
 --------------
+- Can't upload too big script
 - Call hostlog function 
 - Create a function in JS to get a callback in Kotlin with input and output arguments
 - Debug TS 
